@@ -1,3 +1,39 @@
+
+def convert_pattern_to_music21(pattern, offset):
+    """Convert a generated note or chord token into music21."""
+    from music21 import note, chord
+
+    pattern = str(pattern).strip()
+
+    if "+" in pattern or "." in pattern:
+        parts = pattern.replace("+", ".").split(".")
+        pitches = []
+
+        for part in parts:
+            part = part.strip()
+            if not part:
+                continue
+
+            try:
+                pitches.append(int(part))
+            except ValueError:
+                pitches.append(part)
+
+        if not pitches:
+            return None
+
+        element = chord.Chord(pitches)
+    else:
+        try:
+            element = note.Note(int(pattern))
+        except ValueError:
+            element = note.Note(pattern)
+
+    element.offset = offset
+    element.quarterLength = 0.5
+
+    return element
+
 import os
 import numpy as np
 import argparse
