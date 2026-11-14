@@ -1,8 +1,37 @@
 import os
 import numpy as np
+import argparse
+
 import pandas as pd
 from tensorflow import keras
 from music21 import stream, note, chord
+
+
+def sample_with_temperature(prediction, temperature, rng):
+    probabilities = np.asarray(prediction, dtype=np.float64)
+    probabilities = np.clip(probabilities, 1e-12, None)
+    probabilities /= probabilities.sum()
+
+    if temperature <= 0:
+        raise ValueError("Temperature must be greater than zero")
+
+    logits = np.log(probabilities) / temperature
+    logits -= np.max(logits)
+
+    adjusted = np.exp(logits)
+    adjusted /= adjusted.sum()
+
+    return int(rng.choice(len(adjusted), p=adjusted))
+
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--temperature", type=float, default=0.7)
+parser.add_argument("--seed", type=int, default=None)
+args = parser.parse_args()
+
+temperature = args.temperature
+rng = np.random.default_rng(args.seed)
 
 notes = pd.read_csv("all_notes.csv", header=None)[0].astype(str).tolist()
 
@@ -29,7 +58,7 @@ for i in range(200):
     x /= len(vocabulary)
 
     prediction = model.predict(x, verbose=0)[0]
-    index = int(np.argmax(prediction))
+    index = sample_with_temperature(prediction, temperature, rng)
 
     generated.append(int_to_note[index])
     pattern = pattern[1:] + [index]
