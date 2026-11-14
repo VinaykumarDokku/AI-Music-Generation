@@ -19,3 +19,7 @@ models/
 # Generated music
 generated_music/
 >>>>>>> 93a1f40 (Improve AI music generation with LSTM training and MIDI output)
+
+# Local backups
+backups/
+*.backup
