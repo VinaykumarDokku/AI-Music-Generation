@@ -1,4 +1,21 @@
+<<<<<<< HEAD
 .venv/
 __pycache__/
 .ipynb_checkpoints/
 .DS_Store
+=======
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+
+# Trained models
+models/
+*.keras
+*.hdf5
+
+# Generated music
+generated_music/
+>>>>>>> 93a1f40 (Improve AI music generation with LSTM training and MIDI output)
