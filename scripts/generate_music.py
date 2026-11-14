@@ -1,38 +1,52 @@
 
 def convert_pattern_to_music21(pattern, offset):
-    """Convert a generated note or chord token into music21."""
-    from music21 import note, chord
+    """Safely convert a note or chord token into music21."""
+    from music21 import note, chord, pitch
 
     pattern = str(pattern).strip()
 
-    if "+" in pattern or "." in pattern:
-        parts = pattern.replace("+", ".").split(".")
-        pitches = []
+    if not pattern:
+        return None
 
-        for part in parts:
-            part = part.strip()
-            if not part:
-                continue
+    try:
+        if "+" in pattern or "." in pattern:
+            parts = pattern.replace("+", ".").split(".")
+            pitches = []
 
-            try:
-                pitches.append(int(part))
-            except ValueError:
-                pitches.append(part)
+            for part in parts:
+                part = part.strip()
 
-        if not pitches:
-            return None
+                if not part:
+                    continue
 
-        element = chord.Chord(pitches)
-    else:
-        try:
-            element = note.Note(int(pattern))
-        except ValueError:
-            element = note.Note(pattern)
+                try:
+                    if part.lstrip("-").isdigit():
+                        pitches.append(int(part))
+                    else:
+                        pitches.append(pitch.Pitch(part))
+                except (ValueError, pitch.PitchException):
+                    print("Skipping invalid chord component:", part)
 
-    element.offset = offset
-    element.quarterLength = 0.5
+            if not pitches:
+                return None
 
-    return element
+            element = chord.Chord(pitches)
+        else:
+            if pattern.lstrip("-").isdigit():
+                element = note.Note(int(pattern))
+            else:
+                element = note.Note(pattern)
+
+        element.offset = offset
+        element.quarterLength = 0.5
+        return element
+
+    except (ValueError, TypeError, pitch.PitchException) as error:
+        print("Skipping invalid musical pattern:", pattern, error)
+        return None
+
+
+
 
 import os
 import numpy as np
@@ -78,7 +92,7 @@ int_to_note = {i: n for n, i in note_to_int.items()}
 model = keras.models.load_model("models/best_model.keras")
 
 sequence_length = 100
-start = np.random.randint(0, len(notes) - sequence_length)
+start = rng.integers(0, len(notes) - sequence_length)
 
 pattern = [
     note_to_int[n]
@@ -113,7 +127,7 @@ for pattern in generated:
         ]
         new_element = chord.Chord(notes_in_chord)
     else:
-        new_element = note.Note(pattern)
+        new_element = convert_pattern_to_music21(pattern, offset)
 
     new_element.offset = offset
     new_element.quarterLength = 0.5
